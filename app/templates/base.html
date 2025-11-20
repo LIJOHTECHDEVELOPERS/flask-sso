@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DigiKenya - Single Sign-On</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0067B8;
+            --primary-hover: #005a9e;
+            --primary-light: #e6f2ff;
+            --text-primary: #1f1f1f;
+            --text-secondary: #605e5c;
+            --border: #d1d1d1;
+            --bg-gray: #f5f5f5;
+            --success: #107c10;
+            --danger: #d13438;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+        }
+
+        /* * MODERN BACKGROUND STYLES 
+         * 1. Base color is white.
+         * 2. Added a subtle radial gradient for depth.
+         * 3. Added a geometric pattern for modern texture (using multiple background layers).
+         */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text-primary);
+
+            /* The modern design */
+            background-color: #ffffff; /* Explicitly set base color to white */
+            background-image: 
+                /* Subtle radial gradient for depth, centered at the card */
+                radial-gradient(circle at center, rgba(240, 248, 255, 0.5) 0%, rgba(255, 255, 255, 0) 60%),
+                /* Very light geometric pattern (e.g., subtle squares or dots) */
+                linear-gradient(90deg, #f7f9fc 1px, transparent 1px),
+                linear-gradient(#f7f9fc 1px, transparent 1px);
+            background-size: 50px 50px; /* Size of the pattern grid */
+            background-position: center center;
+            background-attachment: fixed; /* Ensures pattern stays put while scrolling (if content exceeds viewport) */
+        }
+        
+        /* Ensure brand name is readable on the white background */
+        .brand-name {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary); /* Changed from white to primary text color */
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        /* Ensure brand tagline is readable on the white background */
+        .brand-tagline {
+            color: var(--text-secondary); /* Changed from white/transparent to secondary text color */
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+
+        .auth-container {
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .brand-logo {
+            width: 56px;
+            height: 56px;
+            background: white;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-md);
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+
+        .auth-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        .card-body {
+            padding: 48px 40px;
+        }
+
+        .card-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .card-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .form-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .form-control {
+            height: 48px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 15px;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+            outline: none;
+        }
+
+        .form-control::placeholder {
+            color: #a19f9d;
+        }
+
+        .btn-primary-custom {
+            height: 48px;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary-custom:hover {
+            background: var(--primary-hover);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary-custom:active {
+            transform: translateY(0);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 28px 0;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .divider span {
+            padding: 0 16px;
+        }
+
+        .btn-social {
+            height: 48px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: white;
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 15px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            gap: 12px;
+        }
+
+        .btn-social:hover {
+            background: var(--bg-gray);
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-social i {
+            font-size: 20px;
+        }
+
+        .text-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .text-link:hover {
+            text-decoration: underline;
+            color: var(--primary-hover);
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 24px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: #dff6dd;
+            color: var(--success);
+        }
+
+        .alert-danger {
+            background: #fde7e9;
+            color: var(--danger);
+        }
+
+        .btn-close {
+            background-size: 16px;
+            opacity: 0.5;
+        }
+
+        .btn-close:hover {
+            opacity: 1;
+        }
+
+        .profile-avatar {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Kept the gradient for a nice visual pop on the avatar */
+            background: linear-gradient(135deg, var(--primary), #764ba2); 
+            color: white;
+            font-size: 36px;
+            font-weight: 600;
+            box-shadow: var(--shadow-md);
+        }
+
+        .info-item {
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .badge-connected {
+            color: var(--success);
+        }
+
+        .badge-not-connected {
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 576px) {
+            .card-body {
+                padding: 32px 24px;
+            }
+            
+            .brand-name {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="brand-header">
+            <div class="brand-logo">DK</div>
+            <h1 class="brand-name">DigiKenya</h1>
+            <p class="brand-tagline">Secure Authentication Platform</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ 'danger' if category == 'danger' else 'success' }} alert-dismissible fade show">
+                <i class="bi bi-{{ 'exclamation-circle' if category == 'danger' else 'check-circle' }}-fill"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

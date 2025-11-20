@@ -1,0 +1,36 @@
+# docker-compose.yml
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sso-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: Kibuchi10519
+      POSTGRES_DB: sso_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  secureauth-sso:
+    build: .
+    container_name: secureauth-sso
+    restart: unless-stopped
+    environment:
+      - SECRET_KEY=5VIoRwvxNalr6aGPtofyB8Wc/ygm81aAhO+Vyw7JxKc=
+      - SQLALCHEMY_DATABASE_URI=postgresql://admin:Kibuchi10519@postgres:5432/sso_db
+      - FLASK_APP=run.py
+      - GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+      - GOOGLE_CLIENT_SECRET=your-google-client-secret
+      - GITHUB_CLIENT_ID=your-github-client-id
+      - GITHUB_CLIENT_SECRET=your-github-client-secret
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:

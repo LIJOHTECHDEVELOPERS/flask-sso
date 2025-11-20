@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-card">
+    <div class="card-body">
+        <h2 class="card-title">Create account</h2>
+        <p class="card-subtitle">Join DigiKenya today</p>
+        
+        <form method="post">
+            <div class="mb-3">
+                <label class="form-label">Full Name <span style="color: var(--text-secondary); font-weight: 400;">(optional)</span></label>
+                <input type="text" name="name" class="form-control" placeholder="John Doe">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email address</label>
+                <input type="email" name="email" class="form-control" placeholder="name@example.com" required>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" class="form-control" placeholder="Create a strong password" required>
+            </div>
+            <button type="submit" class="btn btn-primary-custom w-100">
+                Create account
+            </button>
+        </form>
+
+        <div class="divider">
+            <span>or sign up with</span>
+        </div>
+
+        <div class="d-grid gap-3">
+            <a href="{{ url_for('auth.login_google') }}" class="btn-social">
+                <i class="bi bi-google"></i>
+                <span>Sign up with Google</span>
+            </a>
+            <a href="{{ url_for('auth.login_github') }}" class="btn-social">
+                <i class="bi bi-github"></i>
+                <span>Sign up with GitHub</span>
+            </a>
+        </div>
+
+        <p class="footer-text">
+            Already have an account? <a href="{{ url_for('auth.login') }}" class="text-link">Sign in</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

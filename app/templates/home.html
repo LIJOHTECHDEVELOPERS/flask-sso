@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-card">
+    <div class="card-body text-center">
+        <!-- Main header for the authentication card -->
+        <h2 class="card-title">Welcome to DigiKenya</h2>
+        <p class="card-subtitle">Choose your preferred sign-in method</p>
+
+        <!-- Primary sign-in method: Email/Password -->
+        <div class="d-grid gap-3 mb-4">
+            <!-- Uses the strong primary button style for the main login action -->
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary-custom">
+                <i class="bi bi-envelope-fill me-2"></i>
+                Sign in with Email or Username
+            </a>
+        </div>
+
+        <!-- Divider separating traditional login from SSO -->
+        <div class="divider">
+            <span>or continue with a linked service</span>
+        </div>
+
+        <!-- Social login options (SSO) -->
+        <div class="d-grid gap-3 mt-4">
+            <a href="{{ url_for('auth.login_google') }}" class="btn-social">
+                <i class="bi bi-google"></i>
+                <span>Continue with Google</span>
+            </a>
+            <a href="{{ url_for('auth.login_github') }}" class="btn-social">
+                <i class="bi bi-github"></i>
+                <span>Continue with GitHub</span>
+            </a>
+            <!-- Placeholder for additional SSO options -->
+            <a href="#" class="btn-social">
+                <i class="bi bi-microsoft"></i>
+                <span>Continue with Microsoft</span>
+            </a>
+        </div>
+
+        <!-- Footer link for account registration -->
+        <p class="footer-text mt-4">
+            Don't have an account yet? <a href="{{ url_for('auth.register') }}" class="text-link">Register now</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
