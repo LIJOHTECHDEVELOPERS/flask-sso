@@ -1,5 +1,5 @@
 # app/__init__.py
-from flask import Flask
+from flask import Flask, request # <-- ADDED 'request' import
 from flask_cors import CORS
 from .extensions import db, login_manager, oauth, migrate
 from .models import User
@@ -10,38 +10,56 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object('config.Config')
 
-    # ⭐ FIX 1: Configure Session Cookie for Cross-Origin (SameSite=None; Secure)
-    # This is required for the client-side fetch() with credentials
-    # from your frontend domain (cross-origin) to work reliably.
-    # NOTE: This REQUIRES the Flask app to run under HTTPS in production.
+    # FIX 1: Configure Session Cookie for Cross-Origin (SameSite=None; Secure)
+    # This is required for the browser to send cookies in cross-site fetch calls.
     app.config['SESSION_COOKIE_SAMESITE'] = 'None'
     app.config['SESSION_COOKIE_SECURE'] = True
     
-    # ⭐ FIX 2: Gracefully handle the FRONTEND_URL environment variable 
-    # to prevent 'TypeError: argument of type 'NoneType' is not iterable'
+    # FIX 2: Gracefully handle the FRONTEND_URL environment variable
     allowed_origins = [
         "http://localhost:8080",
         "http://localhost:5000",
         "http://localhost:3000",
         "https://auth.digikenya.co.ke"
-        # Add your production frontend domain (e.g., "https://app.digikenya.co.ke")
+        # Add your production frontend domain here when deployed
     ]
     
-    # Check if the environment variable is set before appending
     frontend_url = os.getenv('FRONTEND_URL')
     if frontend_url:
         allowed_origins.append(frontend_url)
 
-    # Initialize CORS - MUST be done early before routes are registered
+    # Initialize CORS
     CORS(app, resources={
         r"/*": {
-            "origins": allowed_origins, # Use the safe list of origins
+            "origins": allowed_origins,
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
-            "supports_credentials": True,
+            "supports_credentials": True, # This tells flask-cors to try setting the header
             "expose_headers": ["Content-Type", "Authorization"]
         }
     })
+
+    # FIX 3: Explicitly set CORS headers via @after_request
+    # This ensures the critical 'Access-Control-Allow-Credentials: true'
+    # header is present even if flask-cors or an upstream proxy fails to set it,
+    # resolving the console error.
+    @app.after_request
+    def add_cors_headers(response):
+        origin = request.headers.get('Origin')
+        
+        # Only set headers if the request is from an allowed origin
+        if origin and origin in allowed_origins:
+            response.headers['Access-Control-Allow-Origin'] = origin
+            # Crucial fix for "credentials mode is 'include'" error:
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS, PUT, DELETE'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        
+        # Handle OPTIONS preflight requests if needed (though flask-cors usually handles this)
+        if request.method == 'OPTIONS':
+            response.status_code = 200
+        
+        return response
 
     # Initialize extensions
     db.init_app(app)
