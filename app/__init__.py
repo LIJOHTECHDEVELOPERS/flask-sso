@@ -10,26 +10,32 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object('config.Config')
 
-    # ⭐ FIX: Configure Session Cookie for Cross-Origin (SameSite=None; Secure)
-    # This setting is required when your frontend (e.g., localhost:3000)
-    # is making requests to your backend (auth.digikenya.co.ke) with credentials.
-    # SameSite=None must be paired with Secure=True (requires HTTPS).
+    # ⭐ FIX 1: Configure Session Cookie for Cross-Origin (SameSite=None; Secure)
+    # This is required for the client-side fetch() with credentials
+    # from your frontend domain (cross-origin) to work reliably.
+    # NOTE: This REQUIRES the Flask app to run under HTTPS in production.
     app.config['SESSION_COOKIE_SAMESITE'] = 'None'
     app.config['SESSION_COOKIE_SECURE'] = True
-    # If the application is ever deployed without HTTPS, you must add logic
-    # to only set these to True/None when in production (HTTPS)
+    
+    # ⭐ FIX 2: Gracefully handle the FRONTEND_URL environment variable 
+    # to prevent 'TypeError: argument of type 'NoneType' is not iterable'
+    allowed_origins = [
+        "http://localhost:8080",
+        "http://localhost:5000",
+        "http://localhost:3000",
+        "https://auth.digikenya.co.ke"
+        # Add your production frontend domain (e.g., "https://app.digikenya.co.ke")
+    ]
+    
+    # Check if the environment variable is set before appending
+    frontend_url = os.getenv('FRONTEND_URL')
+    if frontend_url:
+        allowed_origins.append(frontend_url)
 
     # Initialize CORS - MUST be done early before routes are registered
     CORS(app, resources={
         r"/*": {
-            "origins": [
-                "http://localhost:8080",
-                "http://localhost:5000",
-                "http://localhost:3000",
-                "https://auth.digikenya.co.ke",
-                # Add your production frontend domain here (e.g., "https://app.digikenya.co.ke")
-                os.getenv('FRONTEND_URL') # Dynamically add the frontend URL if set
-            ],
+            "origins": allowed_origins, # Use the safe list of origins
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
             "supports_credentials": True,
