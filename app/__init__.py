@@ -10,6 +10,15 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object('config.Config')
 
+    # ⭐ FIX: Configure Session Cookie for Cross-Origin (SameSite=None; Secure)
+    # This setting is required when your frontend (e.g., localhost:3000)
+    # is making requests to your backend (auth.digikenya.co.ke) with credentials.
+    # SameSite=None must be paired with Secure=True (requires HTTPS).
+    app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+    app.config['SESSION_COOKIE_SECURE'] = True
+    # If the application is ever deployed without HTTPS, you must add logic
+    # to only set these to True/None when in production (HTTPS)
+
     # Initialize CORS - MUST be done early before routes are registered
     CORS(app, resources={
         r"/*": {
@@ -17,7 +26,9 @@ def create_app():
                 "http://localhost:8080",
                 "http://localhost:5000",
                 "http://localhost:3000",
-                "https://auth.digikenya.co.ke"
+                "https://auth.digikenya.co.ke",
+                # Add your production frontend domain here (e.g., "https://app.digikenya.co.ke")
+                os.getenv('FRONTEND_URL') # Dynamically add the frontend URL if set
             ],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
