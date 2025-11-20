@@ -20,7 +20,8 @@ def create_app():
         "http://localhost:8080",
         "http://localhost:5000",
         "http://localhost:3000",
-        "https://auth.digikenya.co.ke"
+        "https://auth.digikenya.co.ke",
+        "https://sentinel.digikenya.co.ke",
         # Add your production frontend domain here when deployed
     ]
     

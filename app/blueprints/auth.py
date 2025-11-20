@@ -1,4 +1,3 @@
-# app/blueprints/auth.py
 from flask import Blueprint, render_template, request, flash, redirect, jsonify, url_for
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_cors import cross_origin
@@ -18,17 +17,25 @@ def get_github_client():
 # ==================== Helper: Safe Redirect ====================
 def safe_redirect(default='main.profile'):
     """Redirect to redirect_uri if provided and safe, else fallback."""
+    # Check both request args (GET) and form data (POST) for the URI
     redirect_to = request.args.get('redirect_uri') or request.form.get('redirect_uri')
+    
+    # Simple safety check: ensure it looks like a URL
     if redirect_to and redirect_to.startswith(('http://', 'https://')):
         # In production you should whitelist allowed domains
-        # For now we allow any (good for dev + your domain)
         return redirect(redirect_to)
+        
     return redirect(url_for(default))
 
 # ==================== Traditional Auth ====================
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
+    # Capture the redirect_uri from the initial GET request if present, 
+    # to carry it through the form submission.
+    redirect_uri = request.args.get('redirect_uri') 
+    
     if current_user.is_authenticated:
+        # Use the captured URI for redirection if the user is already authenticated
         return safe_redirect('main.index')
 
     if request.method == 'POST':
@@ -38,16 +45,24 @@ def register():
 
         if User.query.filter_by(email=email).first():
             flash('Email already registered', 'danger')
-            return redirect(url_for('auth.register'))
+            # Pass the redirect_uri back to the register form on error
+            return redirect(url_for('auth.register', redirect_uri=redirect_uri))
 
         user = User(email=email, name=name, password_hash=hash_password(password))
         db.session.add(user)
         db.session.commit()
         login_user(user)
         flash('Account created successfully!', 'success')
-        return safe_redirect('main.profile')
+        
+        # ⭐ FIX APPLIED HERE: If redirect_uri was captured, use it for the final redirect
+        if redirect_uri:
+            return safe_redirect(redirect_uri)
+        else:
+            return safe_redirect('main.profile')
 
-    return render_template('register.html')
+    # For GET request, render the template and pass the redirect_uri so the 
+    # template can include it as a hidden field in the POST form.
+    return render_template('register.html', redirect_uri=redirect_uri)
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -66,9 +81,13 @@ def login():
             return safe_redirect('main.profile')
 
         flash('Invalid email or password', 'danger')
-        return redirect(url_for('auth.login'))
+        # Preserve the redirect_uri on login failure
+        redirect_uri = request.form.get('redirect_uri')
+        return redirect(url_for('auth.login', redirect_uri=redirect_uri))
 
-    return render_template('login.html')
+    # For GET request, pass the redirect_uri to the template
+    redirect_uri = request.args.get('redirect_uri')
+    return render_template('login.html', redirect_uri=redirect_uri)
 
 
 # ==================== OAuth Login Initiators ====================
@@ -176,7 +195,7 @@ def auth_github():
 def logout():
     logout_user()
     flash('You have been signed out', 'info')
-    return safe_redirect('main.index')  # or redirect to redirect_uri if you want
+    return safe_redirect('main.index') # This redirect path will check request.args for 'redirect_uri'
 
 
 # ==================== OIDC / User Info Endpoints ====================
