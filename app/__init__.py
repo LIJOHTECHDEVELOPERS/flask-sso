@@ -1,5 +1,6 @@
 # app/__init__.py
 from flask import Flask
+from flask_cors import CORS
 from .extensions import db, login_manager, oauth, migrate
 from .models import User
 from .blueprints import register_blueprints
@@ -8,6 +9,22 @@ import os
 def create_app():
     app = Flask(__name__)
     app.config.from_object('config.Config')
+
+    # Initialize CORS - MUST be done early before routes are registered
+    CORS(app, resources={
+        r"/*": {
+            "origins": [
+                "http://localhost:8080",
+                "http://localhost:5000",
+                "http://localhost:3000",
+                "https://auth.digikenya.co.ke"
+            ],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
+            "supports_credentials": True,
+            "expose_headers": ["Content-Type", "Authorization"]
+        }
+    })
 
     # Initialize extensions
     db.init_app(app)
@@ -44,6 +61,7 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
 
+    # Register blueprints AFTER CORS is initialized
     register_blueprints(app)
 
     return app
