@@ -1,6 +1,7 @@
 # app/blueprints/auth.py
 from flask import Blueprint, render_template, request, flash, redirect, jsonify, url_for
 from flask_login import login_user, current_user, logout_user, login_required
+from flask_cors import cross_origin
 from ..extensions import db, oauth
 from ..models import User
 from ..utils import hash_password, verify_password
@@ -79,10 +80,10 @@ def login_google():
         return redirect(url_for('auth.login'))
     # Preserve redirect_uri through the OAuth flow
     redirect_uri = request.args.get('redirect_uri')
-    redirect_uri = url_for('auth.auth_google', _external=True)
+    callback_url = url_for('auth.auth_google', _external=True)
     if redirect_uri:
-        redirect_uri += f"?redirect_uri={redirect_uri}"
-    return google.authorize_redirect(redirect_uri)
+        callback_url += f"?redirect_uri={redirect_uri}"
+    return google.authorize_redirect(callback_url)
 
 
 @auth_bp.route('/login/github')
@@ -180,6 +181,7 @@ def logout():
 
 # ==================== OIDC / User Info Endpoints ====================
 @auth_bp.route('/.well-known/openid-configuration')
+@cross_origin()
 def openid_config():
     base = request.url_root.rstrip('/')
     return jsonify({
@@ -193,12 +195,14 @@ def openid_config():
         "id_token_signing_alg_values_supported": ["HS256"],
     })
 
-@auth_bp.route('/oauth2/token')
+@auth_bp.route('/oauth2/token', methods=['POST', 'GET'])
+@cross_origin()
 def oauth2_token():
     return jsonify({"access_token": "demo", "token_type": "Bearer"})
 
-@auth_bp.route('/userinfo')
+@auth_bp.route('/userinfo', methods=['GET'])
 @login_required
+@cross_origin()
 def userinfo():
     return jsonify({
         "sub": str(current_user.id),
@@ -210,5 +214,6 @@ def userinfo():
     })
 
 @auth_bp.route('/jwks')
+@cross_origin()
 def jwks():
     return jsonify({"keys": []})
