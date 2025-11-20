@@ -64,4 +64,8 @@ def create_app():
     # Register blueprints AFTER CORS is initialized
     register_blueprints(app)
 
+    # Create database tables if they don't exist
+    with app.app_context():
+        db.create_all()
+
     return app
