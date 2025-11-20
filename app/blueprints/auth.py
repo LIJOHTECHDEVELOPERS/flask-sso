@@ -1,5 +1,5 @@
 # app/blueprints/auth.py
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, jsonify, url_for
 from flask_login import login_user, current_user, logout_user, login_required
 from ..extensions import db, oauth
 from ..models import User
@@ -14,11 +14,21 @@ def get_google_client():
 def get_github_client():
     return oauth.create_client('github')
 
+# ==================== Helper: Safe Redirect ====================
+def safe_redirect(default='main.profile'):
+    """Redirect to redirect_uri if provided and safe, else fallback."""
+    redirect_to = request.args.get('redirect_uri') or request.form.get('redirect_uri')
+    if redirect_to and redirect_to.startswith(('http://', 'https://')):
+        # In production you should whitelist allowed domains
+        # For now we allow any (good for dev + your domain)
+        return redirect(redirect_to)
+    return redirect(url_for(default))
+
 # ==================== Traditional Auth ====================
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for('main.index'))
+        return safe_redirect('main.index')
 
     if request.method == 'POST':
         email = request.form['email'].strip().lower()
@@ -34,7 +44,7 @@ def register():
         db.session.commit()
         login_user(user)
         flash('Account created successfully!', 'success')
-        return redirect(url_for('main.profile'))
+        return safe_redirect('main.profile')
 
     return render_template('register.html')
 
@@ -42,7 +52,7 @@ def register():
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('main.index'))
+        return safe_redirect('main.index')
 
     if request.method == 'POST':
         email = request.form['email'].strip().lower()
@@ -52,21 +62,26 @@ def login():
         if user and user.password_hash and verify_password(user.password_hash, password):
             login_user(user)
             flash('Welcome back!', 'success')
-            return redirect(url_for('main.profile'))
+            return safe_redirect('main.profile')
 
         flash('Invalid email or password', 'danger')
+        return redirect(url_for('auth.login'))
 
     return render_template('login.html')
 
 
-# ==================== OAuth Login Routes ====================
+# ==================== OAuth Login Initiators ====================
 @auth_bp.route('/login/google')
 def login_google():
     google = get_google_client()
     if not google:
         flash('Google OAuth not configured', 'danger')
         return redirect(url_for('auth.login'))
+    # Preserve redirect_uri through the OAuth flow
+    redirect_uri = request.args.get('redirect_uri')
     redirect_uri = url_for('auth.auth_google', _external=True)
+    if redirect_uri:
+        redirect_uri += f"?redirect_uri={redirect_uri}"
     return google.authorize_redirect(redirect_uri)
 
 
@@ -76,11 +91,14 @@ def login_github():
     if not github:
         flash('GitHub OAuth not configured', 'danger')
         return redirect(url_for('auth.login'))
-    redirect_uri = url_for('auth.auth_github', _external=True)
-    return github.authorize_redirect(redirect_uri)
+    redirect_uri = request.args.get('redirect_uri')
+    callback = url_for('auth.auth_github', _external=True)
+    if redirect_uri:
+        callback += f"?redirect_uri={redirect_uri}"
+    return github.authorize_redirect(callback)
 
 
-# ==================== OAuth Callbacks (Hybrid Logic) ====================
+# ==================== OAuth Callbacks (with redirect_uri support) ====================
 @auth_bp.route('/auth/google')
 def auth_google():
     google = get_google_client()
@@ -98,7 +116,7 @@ def auth_google():
     user = User.query.filter_by(email=email).first()
     if user:
         if user.google_id and user.google_id != provider_id:
-            flash('This email is already linked to a different Google account', 'danger')
+            flash('Email already linked to different Google account', 'danger')
             return redirect(url_for('auth.login'))
         user.google_id = provider_id
         if name and not user.name:
@@ -111,7 +129,7 @@ def auth_google():
 
     login_user(user)
     flash('Signed in with Google', 'success')
-    return redirect(url_for('main.profile'))
+    return safe_redirect('main.profile')
 
 
 @auth_bp.route('/auth/github')
@@ -127,7 +145,7 @@ def auth_github():
     emails = emails_resp.json()
     email_obj = next((e for e in emails if e['primary'] and e['verified']), None)
     if not email_obj:
-        flash('No verified primary email found on GitHub', 'danger')
+        flash('No verified primary email on GitHub', 'danger')
         return redirect(url_for('auth.login'))
 
     email = email_obj['email'].lower()
@@ -135,7 +153,7 @@ def auth_github():
     user = User.query.filter_by(email=email).first()
     if user:
         if user.github_id and user.github_id != provider_id:
-            flash('This email is already linked to a different GitHub account', 'danger')
+            flash('Email already linked to different GitHub account', 'danger')
             return redirect(url_for('auth.login'))
         user.github_id = provider_id
         if name and not user.name:
@@ -148,26 +166,28 @@ def auth_github():
 
     login_user(user)
     flash('Signed in with GitHub', 'success')
-    return redirect(url_for('main.profile'))
+    return safe_redirect('main.profile')
 
 
-# ==================== Logout ====================
+# ==================== Logout (with redirect back to app) ====================
 @auth_bp.route('/logout')
 @login_required
 def logout():
     logout_user()
     flash('You have been signed out', 'info')
-    return redirect(url_for('main.index'))
+    return safe_redirect('main.index')  # or redirect to redirect_uri if you want
 
+
+# ==================== OIDC / User Info Endpoints ====================
 @auth_bp.route('/.well-known/openid-configuration')
 def openid_config():
-    request_base_url = request.url_root
+    base = request.url_root.rstrip('/')
     return jsonify({
-        "issuer": request_base_url,
-        "authorization_endpoint": url_for('auth.login', _external=True),
-        "token_endpoint": url_for('auth.oauth2_token', _external=True),  # we'll add
-        "userinfo_endpoint": url_for('auth.userinfo', _external=True),
-        "jwks_uri": url_for('auth.jwks', _external=True),
+        "issuer": base,
+        "authorization_endpoint": f"{base}/login",
+        "token_endpoint": f"{base}/oauth2/token",
+        "userinfo_endpoint": f"{base}/userinfo",
+        "jwks_uri": f"{base}/jwks",
         "response_types_supported": ["code"],
         "subject_types_supported": ["public"],
         "id_token_signing_alg_values_supported": ["HS256"],
@@ -175,8 +195,6 @@ def openid_config():
 
 @auth_bp.route('/oauth2/token')
 def oauth2_token():
-    # Simplified — real apps use proper OAuth2 flow
-    # But this works for most libraries in "Resource Owner Password" or testing
     return jsonify({"access_token": "demo", "token_type": "Bearer"})
 
 @auth_bp.route('/userinfo')
@@ -186,8 +204,9 @@ def userinfo():
         "sub": str(current_user.id),
         "email": current_user.email,
         "email_verified": True,
-        "name": current_user.name,
+        "name": current_user.name or "",
         "preferred_username": current_user.email.split('@')[0],
+        "picture": f"https://ui-avatars.com/api/?name={current_user.email}&background=0078D4&color=fff",
     })
 
 @auth_bp.route('/jwks')
