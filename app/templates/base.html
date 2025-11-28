@@ -19,9 +19,9 @@
         }
 
         :root {
-            --primary: #0067B8;
-            --primary-hover: #005a9e;
-            --primary-light: #e6f2ff;
+            --primary: #1f1f1f;
+            --primary-hover: #000000;
+            --primary-light: #f5f5f5;
             --text-primary: #1f1f1f;
             --text-secondary: #605e5c;
             --border: #d1d1d1;
@@ -33,11 +33,7 @@
             --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
         }
 
-        /* * MODERN BACKGROUND STYLES 
-          * 1. Base color is white.
-          * 2. Added a subtle radial gradient for depth.
-          * 3. Added a geometric pattern for modern texture (using multiple background layers).
-          */
+        /* MODERN BACKGROUND STYLES */
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
@@ -47,35 +43,30 @@
             padding: 20px;
             color: var(--text-primary);
 
-            /* The modern design */
-            background-color: #ffffff; /* Explicitly set base color to white */
+            /* Modern design */
+            background-color: #ffffff;
             background-image: 
-                /* Subtle radial gradient for depth, centered at the card */
                 radial-gradient(circle at center, rgba(240, 248, 255, 0.5) 0%, rgba(255, 255, 255, 0) 60%),
-                /* Very light geometric pattern (e.g., subtle squares or dots) */
                 linear-gradient(90deg, #f7f9fc 1px, transparent 1px),
                 linear-gradient(#f7f9fc 1px, transparent 1px);
-            background-size: 50px 50px; /* Size of the pattern grid */
+            background-size: 50px 50px;
             background-position: center center;
-            background-attachment: fixed; /* Ensures pattern stays put while scrolling (if content exceeds viewport) */
+            background-attachment: fixed;
         }
         
-        /* Ensure brand name is readable on the white background */
         .brand-name {
             font-size: 32px;
             font-weight: 700;
-            color: var(--text-primary); /* Changed from white to primary text color */
+            color: var(--text-primary);
             margin: 0;
             letter-spacing: -0.5px;
         }
 
-        /* Ensure brand tagline is readable on the white background */
         .brand-tagline {
-            color: var(--text-secondary); /* Changed from white/transparent to secondary text color */
+            color: var(--text-secondary);
             font-size: 14px;
             margin-top: 4px;
         }
-
 
         .auth-container {
             width: 100%;
@@ -97,11 +88,14 @@
             justify-content: center;
             margin-bottom: 16px;
             box-shadow: var(--shadow-md);
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--primary);
+            overflow: hidden;
         }
 
+        .brand-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
         .auth-card {
             background: white;
@@ -281,8 +275,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            /* Kept the gradient for a nice visual pop on the avatar */
-            background: linear-gradient(135deg, var(--primary), #764ba2); 
+            background: linear-gradient(135deg, var(--primary), #3a3a3a); 
             color: white;
             font-size: 36px;
             font-weight: 600;
@@ -337,7 +330,9 @@
 <body>
     <div class="auth-container">
         <div class="brand-header">
-            <div class="brand-logo">DK</div>
+            <div class="brand-logo">
+                <img src="{{ url_for('static', filename='images/ai.png') }}" alt="DigiKenya Logo">
+            </div>
             <h1 class="brand-name">DigiKenya</h1>
             <p class="brand-tagline">Secure Authentication Platform</p>
         </div>
