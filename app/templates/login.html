@@ -1,49 +1,42 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="auth-card">
-    <div class="card-body">
-        <h2 class="card-title">Sign in</h2>
-        <p class="card-subtitle">to continue to DigiKenya</p>
-        
-        <form method="post">
-            <!-- ⭐ FIX: Include hidden redirect_uri field for form submission -->
-            {% if redirect_uri %}
-            <input type="hidden" name="redirect_uri" value="{{ redirect_uri }}">
-            {% endif %}
+<div class="auth-form">
+    <h1 class="card-title">Sign in</h1>
+    <p class="card-subtitle">to continue to DigiKenya</p>
+    
+    <form method="post">
+        {% if redirect_uri %}
+        <input type="hidden" name="redirect_uri" value="{{ redirect_uri }}">
+        {% endif %}
 
-            <div class="mb-3">
-                <label class="form-label">Email address</label>
-                <input type="email" name="email" class="form-control" placeholder="name@example.com" required autofocus>
-            </div>
-            <div class="mb-4">
-                <label class="form-label">Password</label>
-                <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
-            </div>
-            <button type="submit" class="btn btn-primary-custom w-100">
-                Sign in
-            </button>
-        </form>
-
-        <div class="divider">
-            <span>or continue with</span>
+        <div class="mb-3">
+            <label for="email" class="form-label">Email address</label>
+            <input type="email" name="email" id="email" class="form-control" placeholder="someone@example.com" required autofocus>
         </div>
 
-        <div class="d-grid gap-3">
-            <!-- ⭐ FIX: Ensure OAuth links also include the redirect_uri -->
-            <a href="{{ url_for('auth.login_google', redirect_uri=redirect_uri) }}" class="btn-social">
-                <i class="bi bi-google"></i>
-                <span>Sign in with Google</span>
-            </a>
-            <a href="{{ url_for('auth.login_github', redirect_uri=redirect_uri) }}" class="btn-social">
-                <i class="bi bi-github"></i>
-                <span>Sign in with GitHub</span>
-            </a>
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" required>
         </div>
 
-        <p class="footer-text">
-            <!-- ⭐ FIX: Ensure registration link includes the redirect_uri -->
-            Don't have an account? <a href="{{ url_for('auth.register', redirect_uri=redirect_uri) }}" class="text-link">Create account</a>
-        </p>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="remember" name="remember">
+            <label class="form-check-label" for="remember">
+                Keep me signed in
+            </label>
+        </div>
+
+        <button type="submit" class="btn-primary-custom">
+            Sign in
+        </button>
+    </form>
+
+    <div class="footer-text">
+        <a href="{{ url_for('auth.forgot_password') }}" class="text-link">Can't access your account?</a>
+    </div>
+
+    <div class="footer-text" style="margin-top: 16px;">
+        Don't have an account? <a href="{{ url_for('auth.register', redirect_uri=redirect_uri) }}" class="text-link">Create one</a>
     </div>
 </div>
 {% endblock %}

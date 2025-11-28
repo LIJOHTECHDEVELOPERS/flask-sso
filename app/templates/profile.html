@@ -1,61 +1,76 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="auth-card">
-    <div class="card-body">
-        
-        <div class="text-center">
-            <!-- Using the custom profile-avatar style from base.html to display initials -->
-            <div class="profile-avatar">
-                <!-- Displays the first letter of the name or email, defaults to 'U' -->
-                {{ (current_user.name[0] if current_user.name else current_user.email[0]) | default('U') | upper }}
-            </div>
-            
-            <!-- Using custom card title/subtitle for consistent typography -->
-            <h3 class="card-title mt-3 mb-1">{{ current_user.name or "Authenticated User" }}</h3>
-            <p class="card-subtitle mb-4">{{ current_user.email }}</p>
-        </div>
-
-        <!-- Using custom info-item classes for clean, modern data presentation -->
-        <div class="info-group">
-            <div class="info-item">
-                <span class="info-label"><i class="bi bi-shield-check"></i> Authentication Method</span>
-                <span class="info-value">{{ 'Password + SSO' if current_user.password_hash else 'SSO Only' }}</span>
-            </div>
-            
-            <div class="info-item">
-                <span class="info-label"><i class="bi bi-google"></i> Google Account</span>
-                <span class="info-value badge-{{ 'connected' if current_user.google_id else 'not-connected' }}">
-                    {{ 'Connected' if current_user.google_id else 'Not linked' }}
-                </span>
-            </div>
-            
-            <div class="info-item">
-                <span class="info-label"><i class="bi bi-github"></i> GitHub Account</span>
-                <span class="info-value badge-{{ 'connected' if current_user.github_id else 'not-connected' }}">
-                    {{ 'Connected' if current_user.github_id else 'Not linked' }}
-                </span>
-            </div>
-            
-            <!-- Displaying User ID for reference/debugging -->
-            <div class="info-item">
-                <span class="info-label"><i class="bi bi-key"></i> User ID (UID)</span>
-                <!-- Text break and smaller font size for long IDs -->
-                <span class="info-value text-break" style="font-size: 11px;">{{ current_user.id }}</span>
-            </div>
-        </div>
-
-        <div class="d-grid gap-3 mt-4">
-            <!-- Secondary action: Back to Home, styled as a social button for border/look consistency -->
-            <a href="{{ url_for('main.index') }}" class="btn-social">
-                <i class="bi bi-house"></i> Back to Home
-            </a>
-            
-            <!-- Primary action: Sign Out, using the primary button style from base.html -->
-            <a href="{{ url_for('auth.logout') }}" class="btn btn-primary-custom">
-                <i class="bi bi-box-arrow-right"></i> Sign Out
-            </a>
+<div class="auth-form">
+    <div class="profile-section">
+        <div class="profile-avatar">
+            {{ (current_user.name[0] if current_user.name else current_user.email[0]) | default('U') | upper }}
         </div>
         
+        <h1 class="card-title" style="text-align: center;">{{ current_user.name or "Authenticated User" }}</h1>
+        <p class="card-subtitle" style="text-align: center; margin-bottom: 32px;">{{ current_user.email }}</p>
+    </div>
+
+    <div class="info-group">
+        <div class="info-item">
+            <span class="info-label"><i class="bi bi-shield-check"></i> Authentication Method</span>
+            <span class="info-value">{{ 'Password + SSO' if current_user.password_hash else 'SSO Only' }}</span>
+        </div>
+        
+        <div class="info-item">
+            <span class="info-label"><i class="bi bi-person-badge"></i> User ID</span>
+            <span class="info-value" style="font-size: 13px; word-break: break-all;">{{ current_user.id }}</span>
+        </div>
+    </div>
+
+    <div style="margin-top: 32px;">
+        <a href="{{ url_for('main.index') }}" class="btn-secondary-custom">
+            <i class="bi bi-house"></i> Back to Home
+        </a>
+        
+        <a href="{{ url_for('auth.logout') }}" class="btn-primary-custom" style="margin-top: 12px;">
+            <i class="bi bi-box-arrow-right"></i> Sign Out
+        </a>
     </div>
 </div>
+
+<style>
+    .profile-section {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+
+    .info-group {
+        border-top: 1px solid var(--border-light);
+    }
+
+    .btn-secondary-custom {
+        height: 32px;
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 0;
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 15px;
+        transition: all 0.1s;
+        padding: 0 12px;
+        cursor: pointer;
+        width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+    .btn-secondary-custom:hover {
+        background: var(--bg-gray);
+        border-color: var(--text-primary);
+        color: var(--text-primary);
+    }
+
+    .btn-secondary-custom i,
+    .btn-primary-custom i {
+        font-size: 16px;
+    }
+</style>
 {% endblock %}
